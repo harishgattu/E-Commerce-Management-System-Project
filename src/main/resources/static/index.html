@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>E-Commerce Management System | Spring Boot & MySQL</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛒</text></svg>">
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <header class="navbar">
+    <div class="nav-container">
+      <div style="display: flex; align-items: center; gap: 2rem;">
+        <a href="#" class="brand" data-view-target="store">
+          <div class="brand-icon">🛍️</div>
+          <span>ApexStore</span>
+          <span class="brand-tag">PRO</span>
+        </a>
+
+        <ul class="nav-links">
+          <li><button class="nav-link active" data-view-target="store">Catalog</button></li>
+          <li><button class="nav-link" data-view-target="orders">My Orders</button></li>
+          <li><button class="nav-link" data-view-target="admin">Admin Dashboard</button></li>
+          <li><a href="/swagger-ui.html" target="_blank" class="nav-link" title="Open Interactive OpenAPI Swagger Docs">Swagger API ↗</a></li>
+        </ul>
+      </div>
+
+      <div class="nav-actions">
+        <!-- Cart Button -->
+        <button class="btn-cart" id="btn-cart-toggle" title="View Shopping Cart">
+          <span>🛒</span>
+          <span>Cart</span>
+          <span class="cart-badge" id="cart-badge">0</span>
+        </button>
+
+        <!-- User Profile & Quick Demo Switcher -->
+        <div class="user-badge">
+          <span id="user-display-name">Johnathan Doe</span>
+          <span id="user-display-role" class="user-role-pill customer">CUSTOMER</span>
+        </div>
+
+        <button class="btn btn-secondary btn-sm" id="btn-switch-role" title="Quick toggle between Customer and Admin testing modes">
+          Switch to Admin
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="container">
+
+    <!-- ================= VIEW 1: STOREFRONT ================= -->
+    <section id="view-store" class="view-section active">
+      <!-- Hero Banner -->
+      <div class="hero">
+        <div class="hero-content">
+          <h1>Enterprise E-Commerce Management System</h1>
+          <p>Real-world inventory management, atomic checkout transactions, and an admin dashboard powered by Spring Boot & MySQL.</p>
+          <div class="hero-features">
+            <span class="hero-pill">⚡ Real-Time Stock Locking</span>
+            <span class="hero-pill">📦 Automated Replenishment</span>
+            <span class="hero-pill">🛡️ Role-Based Security</span>
+            <span class="hero-pill">📊 Executive Analytics</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Store Toolbar (Category Filter, Search, Sort) -->
+      <div class="store-toolbar">
+        <div class="toolbar-row">
+          <div class="category-chips" id="category-chips">
+            <!-- Rendered by JS -->
+          </div>
+          <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <div class="search-box">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="search-input" class="search-input" placeholder="Search by name, SKU, or keyword...">
+            </div>
+            <select id="sort-select" class="sort-select">
+              <option value="default">Sort by: Featured</option>
+              <option value="price-asc">Price: Low to High</option>
+              <option value="price-desc">Price: High to Low</option>
+              <option value="name">Product Name (A-Z)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Products Grid -->
+      <div class="product-grid" id="products-grid">
+        <!-- Product Cards injected by JS -->
+      </div>
+    </section>
+
+    <!-- ================= VIEW 2: CUSTOMER ORDERS ================= -->
+    <section id="view-orders" class="view-section">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <div>
+          <h2>My Order History</h2>
+          <p style="color: var(--text-secondary); font-size: 0.9rem;">Track order fulfillment, payment status, and review line item snapshots.</p>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="loadCustomerOrders()">↻ Refresh Orders</button>
+      </div>
+
+      <div id="customer-orders-container">
+        <!-- Rendered by JS -->
+      </div>
+    </section>
+
+    <!-- ================= VIEW 3: ADMIN DASHBOARD ================= -->
+    <section id="view-admin" class="view-section">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.75rem;">
+        <div>
+          <h2>Executive Admin Dashboard</h2>
+          <p style="color: var(--text-secondary); font-size: 0.9rem;">Monitor store KPIs, manage product taxonomy, control inventory restocks, and fulfill orders.</p>
+        </div>
+        <div style="display: flex; gap: 0.75rem;">
+          <button class="btn btn-primary btn-sm" onclick="openModal('add-product-modal')">+ Add New Product</button>
+          <button class="btn btn-secondary btn-sm" onclick="loadAdminData()">↻ Refresh Metrics</button>
+        </div>
+      </div>
+
+      <!-- KPI Summary Cards -->
+      <div class="dashboard-grid">
+        <div class="metric-card">
+          <div class="metric-icon revenue">💰</div>
+          <div>
+            <div class="metric-val" id="metric-revenue">$0.00</div>
+            <div class="metric-lbl">Total Net Revenue</div>
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon orders">📦</div>
+          <div>
+            <div class="metric-val" id="metric-orders">0</div>
+            <div class="metric-lbl">Total Customer Orders</div>
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon products">🏷️</div>
+          <div>
+            <div class="metric-val" id="metric-products">0</div>
+            <div class="metric-lbl">Active Catalog Products</div>
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon alerts">⚠️</div>
+          <div>
+            <div class="metric-val" id="metric-alerts">0</div>
+            <div class="metric-lbl">Low Stock Alerts (&le; 10 units)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin Sub Navigation Tabs -->
+      <div class="admin-tabs">
+        <button class="admin-tab active" data-tab="inventory">Inventory & Stock Movements</button>
+        <button class="admin-tab" data-tab="products">Product Catalog Management</button>
+        <button class="admin-tab" data-tab="orders">Order Fulfillment & Status</button>
+      </div>
+
+      <!-- Tab 1: Inventory Control -->
+      <div id="admin-panel-inventory" class="admin-subpanel active">
+        <h3 style="margin-bottom: 0.75rem; font-size: 1.1rem;">Critical Low Stock Warnings</h3>
+        <div class="table-responsive" style="margin-bottom: 2rem;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>SKU</th>
+                <th>Product Name</th>
+                <th>Stock Level</th>
+                <th>Category</th>
+                <th>Restock Action</th>
+              </tr>
+            </thead>
+            <tbody id="admin-low-stock-table-body">
+              <!-- Rendered by JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <h3 style="margin-bottom: 0.75rem; font-size: 1.1rem;">Recent Stock Movement Audit Trail</h3>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>SKU</th>
+                <th>Product Name</th>
+                <th>Movement Type</th>
+                <th>Stock Adjustment</th>
+                <th>Reason & Performed By</th>
+              </tr>
+            </thead>
+            <tbody id="admin-audits-table-body">
+              <!-- Rendered by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab 2: Products Catalog CRUD -->
+      <div id="admin-panel-products" class="admin-subpanel">
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>SKU</th>
+                <th>Image</th>
+                <th>Product Name</th>
+                <th>Category</th>
+                <th>Price</th>
+                <th>Stock</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="admin-products-table-body">
+              <!-- Rendered by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab 3: Order Fulfillment -->
+      <div id="admin-panel-orders" class="admin-subpanel">
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Order #</th>
+                <th>Customer Details</th>
+                <th>Total</th>
+                <th>Date</th>
+                <th>Current Status</th>
+                <th>Transition Status</th>
+              </tr>
+            </thead>
+            <tbody id="admin-orders-table-body">
+              <!-- Rendered by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================= SHOPPING CART SLIDE-OUT DRAWER ================= -->
+  <div class="drawer-backdrop" id="cart-backdrop"></div>
+  <aside class="cart-drawer" id="cart-drawer">
+    <div class="cart-header">
+      <h3>Your Shopping Cart</h3>
+      <button class="btn btn-secondary btn-sm" id="btn-close-cart">✕</button>
+    </div>
+    <div class="cart-body" id="cart-items-container">
+      <!-- Cart items injected by JS -->
+    </div>
+    <div class="cart-footer">
+      <div class="cart-summary-line">
+        <span>Subtotal</span>
+        <span id="cart-subtotal">$0.00</span>
+      </div>
+      <div class="cart-summary-line">
+        <span>Estimated Tax (8%)</span>
+        <span id="cart-tax">$0.00</span>
+      </div>
+      <div class="cart-summary-line">
+        <span>Shipping (Free over $50)</span>
+        <span id="cart-shipping">$0.00</span>
+      </div>
+      <div class="cart-summary-line total">
+        <span>Total Amount</span>
+        <span id="cart-total">$0.00</span>
+      </div>
+      <button class="btn btn-primary btn-block" style="margin-top: 0.75rem;" id="btn-checkout">
+        Proceed to Checkout →
+      </button>
+    </div>
+  </aside>
+
+  <!-- ================= CHECKOUT MODAL ================= -->
+  <div class="modal-overlay" id="checkout-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Secure Checkout</h3>
+        <button class="btn btn-secondary btn-sm modal-close-trigger">✕</button>
+      </div>
+      <form onsubmit="handlePlaceOrder(event)">
+        <div class="modal-body">
+          <div style="background: #f8fafc; padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.25rem;">
+            <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem;">Order Review</h4>
+            <div id="checkout-items-summary" style="margin-bottom: 0.5rem;"></div>
+            <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 0.95rem; border-top: 1px dashed var(--border); padding-top: 0.5rem;">
+              <span>Total Payable:</span>
+              <span id="checkout-total" style="color: var(--primary);">$0.00</span>
+            </div>
+            <div style="display: none;">
+              <span id="checkout-subtotal"></span>
+              <span id="checkout-tax"></span>
+              <span id="checkout-shipping"></span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Delivery Street Address *</label>
+            <input type="text" id="checkout-address" class="form-control" value="742 Evergreen Terrace, Springfield, OR 97477, USA" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Payment Method *</label>
+            <select id="checkout-payment" class="form-control">
+              <option value="CREDIT_CARD">Credit / Debit Card (Visa / Mastercard)</option>
+              <option value="UPI">Instant UPI (Google Pay / PhonePe)</option>
+              <option value="NET_BANKING">Net Banking</option>
+              <option value="CASH_ON_DELIVERY">Cash on Delivery (COD)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Order Notes / Delivery Instructions</label>
+            <input type="text" id="checkout-notes" class="form-control" placeholder="e.g. Leave package by front porch">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary modal-close-trigger">Cancel</button>
+          <button type="submit" class="btn btn-primary">Confirm & Place Order</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= ADD PRODUCT MODAL (ADMIN) ================= -->
+  <div class="modal-overlay" id="add-product-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Add New Product to Catalog</h3>
+        <button class="btn btn-secondary btn-sm modal-close-trigger">✕</button>
+      </div>
+      <form onsubmit="handleCreateProduct(event)">
+        <div class="modal-body">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+              <label class="form-label">SKU (Stock Keeping Unit) *</label>
+              <input type="text" id="prod-sku" class="form-control" placeholder="e.g. ELEC-KB-015" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Category *</label>
+              <select id="prod-category" class="form-control" required></select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Product Name *</label>
+            <input type="text" id="prod-name" class="form-control" placeholder="e.g. Keychron K2 Wireless Keyboard" required>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+              <label class="form-label">Price (USD $) *</label>
+              <input type="number" step="0.01" min="0" id="prod-price" class="form-control" placeholder="89.99" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Initial Stock Quantity *</label>
+              <input type="number" min="0" id="prod-stock" class="form-control" placeholder="25" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Image URL</label>
+            <input type="url" id="prod-image" class="form-control" value="https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=600">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Description</label>
+            <textarea id="prod-desc" class="form-control" rows="3" placeholder="Enter high-level product specifications..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary modal-close-trigger">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Product</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= STOCK ADJUSTMENT MODAL (ADMIN) ================= -->
+  <div class="modal-overlay" id="stock-adjust-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Adjust Product Inventory</h3>
+        <button class="btn btn-secondary btn-sm modal-close-trigger">✕</button>
+      </div>
+      <form onsubmit="handleSaveStockAdjustment(event)">
+        <div class="modal-body">
+          <input type="hidden" id="adjust-product-id">
+          <div style="margin-bottom: 1rem; font-weight: 600; color: var(--primary);" id="adjust-product-name"></div>
+
+          <div class="form-group">
+            <label class="form-label">Movement Type *</label>
+            <select id="adjust-movement-type" class="form-control">
+              <option value="RESTOCK">RESTOCK (Inbound Supplier Shipment)</option>
+              <option value="MANUAL_ADJUSTMENT">MANUAL_ADJUSTMENT (Audit Reconciliation)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Quantity Change (+ to add, - to reduce) *</label>
+            <input type="number" id="adjust-qty-change" class="form-control" value="10" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Audit Reason *</label>
+            <input type="text" id="adjust-reason" class="form-control" value="Supplier replenishment batch" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary modal-close-trigger">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Stock Adjustment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Application Scripts -->
+  <script src="/js/state.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
